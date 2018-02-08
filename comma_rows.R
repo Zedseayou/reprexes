@@ -1,40 +1,33 @@
 library(tidyverse)
-library(magrittr)
-library(sf)
-hospital <- tibble(
-  longitude = c(80.15998, 72.89125, 77.65032, 77.60599),
-  latitude = c(12.90524, 19.08120, 12.97238, 12.90927)
-  )
-people <- tibble(
-  longitude = c(72.89537, 77.65094, 73.95325, 72.96746, 77.65058,
-                77.66715, 77.64214, 77.58415, 77.76180, 76.65470,
-                76.65480, 76.65490, 76.65500, 76.65560, 76.65560),
-  latitude = c(19.07726, 13.03902, 18.50330, 19.16764, 12.90871,
-               13.01693, 13.00954, 12.92079, 13.02212, 12.81447,
-               12.81457, 12.81467, 12.81477, 12.81487, 12.81497)
-  )
+tbl <- read_table2(
+  "pollutant air_quality_idx    air_quality_cat air_quality_cat_idx
+  PM2.5,PM10,OZONE         28,6,24     Good,Good,Good               1,1,1
+  PM2.5,PM10,OZONE         28,5,25     Good,Good,Good               1,1,1
+  OZONE,PM2.5,PM10         26,23,4     Good,Good,Good               1,1,1
+  OZONE,PM2.5,PM10         26,23,3     Good,Good,Good               1,1,1
+  OZONE,PM2.5,PM10         27,22,3     Good,Good,Good               1,1,1
+  OZONE,PM2.5,PM10         27,24,2     Good,Good,Good               1,1,1
+  PM2.5,PM10,OZONE         50,4,27     Good,Good,Good               1,1,1
+  PM2.5,PM10,OZONE         54,4,22 Moderate,Good,Good               2,1,1
+  PM2.5,PM10,OZONE         56,5,22 Moderate,Good,Good               2,1,1
+  PM2.5,PM10,OZONE         60,5,28 Moderate,Good,Good               2,1,1",
+  col_types = "cccc"
+)
 
-hospital_sf <- hospital %>%
-  st_as_sf(coords = c("longitude", "latitude")) %>%
-  st_set_crs(4326) %>%
-  st_transform(3395)
+separated <- tbl %>%
+  separate(pollutant, c("pol1", "pol2", "pol3"), sep = ",") %>%
+  separate(air_quality_idx, c("aqi1", "aqi2", "aqi3"), sep = ",") %>%
+  separate(air_quality_cat, c("aqc1", "aqc2", "aqc3"), sep = ",") %>%
+  separate(air_quality_cat_idx, c("aci1", "aci2", "aci3"), sep = ",")
 
-people_sf <- people %>%
-  st_as_sf(coords = c("longitude", "latitude")) %>%
-  st_set_crs(4326) %>%
-  st_transform(3395)
-
-distances <- st_distance(people_sf, hospital_sf) %>%
-  as.numeric() %>%
-  matrix(15, 4) %>%
-  as_tibble()
-
-distances %>%
-  mutate_at(vars(V1:V4), function (x) x > 2000) %>%
-  bind_cols(
-    .,
-    within_2km = pmap_lgl(
-      list(.data$V1, .data$V2, .data$V3, .data$V4),
-      all(..1, ..2, ..3, ..4)
-    )
-  )
+output <- bind_rows(
+  separated %>%
+    select(ends_with("1")) %>%
+    set_names(c("pol", "aqi", "aqc", "aci")),
+  separated %>%
+    select(ends_with("2")) %>%
+    set_names(c("pol", "aqi", "aqc", "aci")),
+  separated %>%
+    select(ends_with("3")) %>%
+    set_names(c("pol", "aqi", "aqc", "aci"))
+)

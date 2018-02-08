@@ -1,5 +1,4 @@
 library(tidyverse)
-library(magrittr)
 library(sf)
 hospital <- tibble(
   longitude = c(80.15998, 72.89125, 77.65032, 77.60599),
@@ -16,25 +15,14 @@ people <- tibble(
 
 hospital_sf <- hospital %>%
   st_as_sf(coords = c("longitude", "latitude")) %>%
-  st_set_crs(4326) %>%
-  st_transform(3395)
+  st_set_crs(4326)
 
 people_sf <- people %>%
   st_as_sf(coords = c("longitude", "latitude")) %>%
-  st_set_crs(4326) %>%
-  st_transform(3395)
+  st_set_crs(4326)
 
 distances <- st_distance(people_sf, hospital_sf) %>%
-  as.numeric() %>%
-  matrix(15, 4) %>%
-  as_tibble()
-
-distances %>%
-  mutate_at(vars(V1:V4), function (x) x > 2000) %>%
-  bind_cols(
-    .,
-    within_2km = pmap_lgl(
-      list(.data$V1, .data$V2, .data$V3, .data$V4),
-      all(..1, ..2, ..3, ..4)
-    )
-  )
+  as_tibble() %>%
+  mutate_at(vars(V1:V4), as.numeric) %>%
+  mutate_at(vars(V1:V4), function (x) x < 2000) %>%
+  bind_cols(., within_2km = pmap_lgl(., ~ any(..1, ..2, ..3, ..4)))

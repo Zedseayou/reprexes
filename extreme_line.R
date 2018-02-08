@@ -19,3 +19,13 @@ extremes[2, 2] <- max(dane$y)
 extremes %>%
   st_linestring() %>%
   plot()
+
+x_ex <- y_ex <- matrix(, 2, 2)
+x_ex[1, 1:2] <- as.matrix(dane[which.min(dane$x), 1:2])
+x_ex[2, 1:2] <- as.matrix(dane[which.max(dane$x), 1:2])
+y_ex[1, 1:2] <- as.matrix(dane[which.min(dane$y), 1:2])
+y_ex[2, 1:2] <- as.matrix(dane[which.max(dane$y), 1:2])
+
+plot(df_punkty)
+plot(x_ex %>% st_linestring(), add = TRUE)
+plot(y_ex %>% st_linestring(), add = TRUE)

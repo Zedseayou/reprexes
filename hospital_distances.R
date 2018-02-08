@@ -25,4 +25,4 @@ distances <- st_distance(people_sf, hospital_sf) %>%
   as_tibble() %>%
   mutate_at(vars(V1:V4), as.numeric) %>%
   mutate_at(vars(V1:V4), function (x) x < 2000) %>%
-  bind_cols(., within_2km = pmap_lgl(., ~ any(..1, ..2, ..3, ..4)))
+  mutate(within_2km = pmap_lgl(., function(V1, V2, V3, V4) any(V1, V2, V3, V4)))

@@ -27,5 +27,3 @@ tbl %>% select(-interval) %>% select(everything())
 tbl %>% select(-interval) %>% arrange(end)
 tbl %>% select(-interval) %>% filter(x > 5)
 
-devtools::session_info()
-

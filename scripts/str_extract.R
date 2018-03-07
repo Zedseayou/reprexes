@@ -1,0 +1,5 @@
+library(stringr)
+str_extract("Bulgaria[6]", ".*(?=\\[\\d\\])")
+str_extract("100 Haddon Ave, Westmont, NJ", ".*?(?=,)")
+str_replace("Bulgaria[6]", "\\[\\d\\]", "")
+str_replace("100 Haddon Ave, Westmont, NJ", ",.*$", "")

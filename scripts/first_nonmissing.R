@@ -10,34 +10,24 @@ tbl <- read_table2(
 )
 
 spread_var <- function(df, var){
-  var <- enquo(var)
-  varname <- str_to_title(quo_name(var))
+  varname <- rlang::sym(str_to_title(var))
+  expr <- enquo(var)
+  # varname <- str_to_title(quo_name(expr))
   df %>%
-    mutate(!! varname := row_number()) %>%
-    spread(!! varname, !! var, sep = "_")
+    mutate(!!varname := row_number()) %>%
+    spread(!!varname, !!expr, sep = "_")
 }
-
-test <- function(input){
-  var <- input
-  var2 <- enquo(input)
-  var3 <- quo(input)
-  print(input)
-  print(var)
-  print(var2)
-  print(var3)
-}
-for (i in vars){
-  test(i)
-}
-
 
 out <- tbl %>%
   magrittr::set_colnames(str_to_lower(colnames(.))) %>%
-  group_by(site_id) %>%
-  mutate(Name = row_number(), Phone = row_number())
+  group_by(site_id)
 for (i in colnames(out)[2:ncol(tbl)]){
   out <- spread_var(out, i)
 }
+out %>%
+  summarise_at(vars(matches("_\\d$")), function(x) x[which(!is.na(x))[1]])
+
+
 
 cols_to_add <- matrix(nrow = nrow(tbl), ncol = ncol(tbl) - 1) %>%
   `colnames<-`(str_to_title(colnames(tbl)[2:ncol(tbl)]))

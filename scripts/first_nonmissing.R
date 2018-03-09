@@ -9,6 +9,24 @@ tbl <- read_table2(
 120        Ali     916-654-8575"
 )
 
+tbl %>%
+  magrittr::set_colnames(str_to_lower(colnames(.))) %>%
+  group_by(site_id) %>%
+  summarise_all(~ str_c(., collapse = ",")) %>%
+  imap_dfc(
+    ~separate(
+      data = tibble(.x),
+      col = 1,
+      into = c(str_c(.y, "_1"), str_c(.y, "_2"), str_c(.y, "_3")),
+      sep = ",",
+      fill = "right"
+    )
+  ) %>%
+  select(-site_id_2, -site_id_3) %>%
+  rename(site_id = site_id_1)
+
+#-------------------------------------------------------------------------------
+
 spread_var <- function(df, var){
   varname <- rlang::sym(str_to_title(var))
   expr <- enquo(var)
@@ -27,7 +45,7 @@ for (i in colnames(out)[2:ncol(tbl)]){
 out %>%
   summarise_at(vars(matches("_\\d$")), function(x) x[which(!is.na(x))[1]])
 
-
+#-------------------------------------------------------------------------------
 
 cols_to_add <- matrix(nrow = nrow(tbl), ncol = ncol(tbl) - 1) %>%
   `colnames<-`(str_to_title(colnames(tbl)[2:ncol(tbl)]))

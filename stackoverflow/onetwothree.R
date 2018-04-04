@@ -21,17 +21,29 @@ B      C      E     1267.30
 C      D      E     1350.45
 B      D      E     1202.33")
 
-total <- tibble(
-  rename(single, one = Mat),
-  unite(double, "two", Mat1, Mat2),
-  unite(triple, "three", Mat1:Mat3)
+ones <- single$Mat
+twos <- str_c(double$Mat1, double$Mat2)
+threes <- str_c(triple$Mat1, triple$Mat2, triple$Mat3)
+
+options <- ones %>%
+  gtools::permutations(5, 5, .) %>%
+  as_tibble() %>%
+  unite("option", V1:V5, sep = "") %>%
+  `[[`(1)
+
+combinations <- bind_rows(
+  crossing(ones, ones, ones, ones, ones),
+  crossing(ones, ones, ones, twos),
+  crossing(ones, ones, threes),
+  crossing(ones, twos, twos),
+  crossing(twos, threes)
 )
 
-combos <- tibble(
-  x = single$Mat %>% `length<-`(9),
-  y = unite(double, "two", Mat1, Mat2, sep = "")$two,
-  z = unite(triple, "three", Mat1:Mat3, sep = "")$three %>% `length<-`(9)
-) %>%
-  complete(x, y, z) %>%
-  unite("xyz", x, y, z, sep = "", remove = FALSE)
+a <- combinations %>%
+  mutate_all(~ replace_na(., "")) %>%
+  unite("string", ones:twos1, sep = "", remove = FALSE) %>%
+  filter(string %in% options) %>%
+  bind_cols(groupings = pmap_int(.[, -1], function(...) sum(c(...) != "")))
+
+
 

@@ -37,13 +37,22 @@ combinations <- bind_rows(
   crossing(ones, ones, threes),
   crossing(ones, twos, twos),
   crossing(twos, threes)
-)
-
-a <- combinations %>%
+) %>%
   mutate_all(~ replace_na(., "")) %>%
   unite("string", ones:twos1, sep = "", remove = FALSE) %>%
   filter(string %in% options) %>%
-  bind_cols(groupings = pmap_int(.[, -1], function(...) sum(c(...) != "")))
+  bind_cols(
+    row = .[, 2:9] %>%
+      pmap(function(...) c(...)) %>%
+      map_chr(~str_c(str_sort(.), collapse = "_"))
+  ) %>%
+  distinct(row, .keep_all = TRUE) %>%
+  select(ones:twos1)
+
+b <- combinations %>%
+  rowid_to_column(var = "comb_id") %>%
+  gather("table", "letter", ones:twos1)
+
 
 
 

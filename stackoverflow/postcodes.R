@@ -1,32 +1,30 @@
-library(tidyverse)
-read_char <- function(char){
-  assertthat::assert_that(char %in% c("A", "9", " ", ""), msg = "Invalid template")
-  if (char == "A"){
-    sample(LETTERS, 1)
-  } else if (char == "9"){
-    sample(0:9, 1)
-  } else if (char == " "){
-    " "
-  } else if (char == ""){
-    ""
+library(stringi)
+
+make_postcodes <- function(templates){
+  postcodes <- templates
+  while (any(stri_detect_regex(postcodes, "l|n"))){
+    for (i in 1:length(templates)){
+      postcodes[i] <- stri_replace_first_fixed(
+        str = postcodes[i],
+        pattern = "l",
+        replacement = sample(LETTERS, 1)
+        )
+      postcodes[i] <- stri_replace_first_fixed(
+        str = postcodes[i],
+        pattern = "n",
+        replacement = sample(0:9, 1)
+        )
+    }
   }
+  postcodes
 }
 
-make_postcode <- function(templates){
-  templates %>%
-    str_split_fixed(pattern = "", n = Inf) %>%
-    t() %>%
-    as_tibble() %>%
-    map_chr(., ~ str_trim(str_c(map_chr(., read_char), collapse = "")))
-}
+make_postcodes("ln nll")
+make_postcodes(c("ln nll", "ln nll", "lnl nll"))
 
-make_postcode("A9 9AA")
-make_postcode(c("A9 9AA","A9 9AA","A9A 9AA"))
-make_postcode("B2 194")
-
-test = stringi::stri_rand_strings(10000, sample(5:9, 1), pattern = "[A9\\ ]")
-profvis(
-a <- make_postcode(test)
-)
-
-stringi::str_replace_all_fixed()
+test = stri_trim_both(stri_rand_strings(100000, sample(5:9, 1), pattern = "[nl\\ ]"))
+tictoc::tic("Time to convert 100,000 templates")
+x <- make_postcodes(test)
+tictoc::toc()
+head(test)
+head(x)

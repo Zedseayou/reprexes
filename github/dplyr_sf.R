@@ -29,5 +29,17 @@ plot(sf_opt2)
 plot(sf_opt2$geometry)
 plot(sf_pts$geometry, add = T)
 
+sf_opt3 <- sf_pts %>%
+  mutate(
+    ring1 = st_buffer(geometry, 50000),
+    ring2 = st_buffer(geometry, 100000)
+  ) %>%
+  mutate(geometry = ring2 / ring1) %>%
+  select(val)
+plot(sf_opt3$geometry)
+plot(sf_pts$geometry, add = T)
+
+
 st_bbox(sf_opt1)
 st_bbox(sf_opt2)
+st_bbox(sf_opt3)

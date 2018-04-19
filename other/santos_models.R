@@ -1,6 +1,7 @@
 library(tidyverse)
 library(broom)
 library(betareg)
+library(segmented)
 
 tbl <- structure(list(map_score = c(
   145L, 156L, 158L, 159L, 162L, 164L,
@@ -37,16 +38,23 @@ tbl <- structure(list(map_score = c(
   "collector"
 ))), .Names = c("cols", "default"), class = "col_spec"))
 
+seg <- tibble(
+  method = "segmented",
+  mean = tbl$mean,
+  map_score = tbl$map_score,
+  .fitted = segmented(
+    obj = lm(mean ~ map_score, data = tbl),
+    seg.Z = ~ map_score,
+    psi = c(170, 220)
+  ) %>%
+    predict()
+)
 preds <- tbl %>%
   do(
     linear = lm(mean ~ map_score, data = .),
     square = lm(
       formula = mean ~ map_score + map_score2,
       data = mutate(., map_score2 = map_score ^ 2)
-      ),
-    cubic = lm(
-      formula = mean ~ map_score + map_score2 + map_score3,
-      data = mutate(., map_score2 = map_score ^ 2, map_score3 = map_score ^ 3)
     ),
     # logit = glm(mean ~ map_score, family = binomial(link = "logit"), data = .),
     beta = betareg(
@@ -54,10 +62,11 @@ preds <- tbl %>%
       data = mutate(., mean = (mean * (n() - 1) + 0.5) / n())),
     loess = loess(mean ~ map_score, data = .)
   ) %>%
-  gather("method", "model", linear:loess) %>%
+  gather("method", "model", everything()) %>%
   rowwise() %>%
   augment(model) %>%
-  ungroup()
+  ungroup() %>%
+  bind_rows(seg)
 
 ggplot(preds, aes(x = map_score)) +
   geom_point(aes(y = mean)) +
@@ -70,9 +79,33 @@ ggplot(preds, aes(x = map_score)) +
         TRUE ~ .fitted
       )
     ),
-    mapping = aes(y = .fitted, colour = method)
+    mapping = aes(y = .fitted, colour = method),
+    size = 1.5
   )
 
-#' ![](file66302bfb5454_reprex_files/figure-markdown_strict/reprex-body-1.png)
+tibble(
+  x = seq(0.499, 0.501, by = 0.0001)
+) %>%
+  mutate(y = (x * (n() - 1) + 0.5) / n()) %>%
+  ggplot() +
+  geom_line(aes(x = x, y = y), col = "red") +
+  geom_line(aes(x = x, y =x), col = "blue")
 
-#' Created on 2018-04-18 by the [reprex package](http://reprex.tidyverse.org) (v0.2.0).
+preds %>%
+  select(method, mean, map_score, .fitted) %>%
+  mutate(
+    .fitted = case_when(
+      .fitted > 1 ~ 1,
+      .fitted < 0 ~ 0,
+      TRUE ~ .fitted
+    )
+  ) %>%
+  mutate(rmse = (.fitted - mean) ^ 2) %>%
+  group_by(method) %>%
+  summarise(rmse = sqrt(mean(rmse)))
+
+#> Warning: Removed 72 rows containing missing values (geom_point).
+
+#' ![](file663033255806_reprex_files/figure-markdown_strict/reprex-body-1.png)
+
+#' Created on 2018-04-19 by the [reprex package](http://reprex.tidyverse.org) (v0.2.0).

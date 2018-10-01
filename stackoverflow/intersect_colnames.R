@@ -25,6 +25,8 @@ df2 <- data.frame(
     "Q10111", "Q11121"
   )
 )
-cols <- intersect(colnames(df1), colnames(df2))
-rbind(df1[cols], df2[cols])
-dplyr::bind_rows(df1, df2)
+library(tidyverse)
+df_list <- list(df1, df2)
+cols <- reduce(df_list, .f = ~ intersect(colnames(.x), colnames(.y)))
+map_dfr(df_list, ~ .[cols])
+bind_rows(df_list)

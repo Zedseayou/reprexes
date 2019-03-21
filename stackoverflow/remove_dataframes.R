@@ -8,25 +8,24 @@ x <- list(
 )
 
 remove_dataframes <- function(input_list) {
-  current_depth <- 1
   current_list <- input_list
-  max_depth <- vec_depth(current_list)
-  while (current_depth < max_depth) {
-    browser()
+  current_depth <- vec_depth(current_list)
+  # current_depth <- max_depth
+  while (current_depth > 1) {
     current_list <- modify_depth(
       .x = current_list,
       .depth = current_depth,
-      .f = ~ discard(., is.data.frame)
+      .f = ~ discard(., is.data.frame),
+      .ragged = TRUE
     )
-  current_depth <- current_depth + 1
-  max_depth <- vec_depth(current_list)
+  current_depth <- current_depth - 1
   }
   return(current_list)
 }
 
 x %>%
   remove_dataframes %>%
-  view
+  glimpse
 
 vec_depth(x)
 

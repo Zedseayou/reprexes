@@ -89,4 +89,5 @@ bench::mark(
   v5 = unnest_vec5(fives_tbl, sentences, c("W1", "W2", "W3", "W4", "W5", "W6"))
 )
 
-
+fives_tbl %>%
+  unnest_wider(sentences)
